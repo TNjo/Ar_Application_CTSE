@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+      .controller {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        display: none; /* Smart UI: start hidden */
+        flex-wrap: wrap;
+        justify-content: center;
+        z-index: 20;
+        padding: 0 10px;
+      }
+      button {
+        flex: 1 1 40%;
+        min-width: 100px;
+        max-width: 150px;
+        margin: 5px;
+        padding: 15px 20px;
+        font-size: 18px;
+        border-radius: 10px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <div class="controller">
+      <button onclick="moveDeer('forward')">Forward</button>
+      <button onclick="moveDeer('backward')">Backward</button>
+      <button onclick="moveDeer('left')">Left</button>
+      <button onclick="moveDeer('right')">Right</button>
+      <button onclick="moveDeer('idle')">Idle</button>
+      <button onclick="moveDeer('jump')">Jump</button>
+    </div>
+
+    <a-scene embedded arjs>
+      <a-assets>
+        <a-asset-item id="fox" src="muwa.glb"></a-asset-item>
+      </a-assets>
+
+      <a-marker type="pattern" url="pattern-DEER_AR.patt">
+        <a-entity 
+          id="animatedDeer"
+          gltf-model="#fox"
+          animation-mixer="clip: Idle"
+          position="0 0 0"
+          rotation="0 0 0"
+          scale="0.8 0.8 0.8">
+        </a-entity>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+      let deer = null;
+      let speed = 0.05;
+      let rotationSpeed = 10;
+
+      window.onload = () => {
+        deer = document.querySelector('#animatedDeer');
+        const controller = document.querySelector('.controller');
+
+        // Show controls only after marker is found
+        const marker = document.querySelector('a-marker');
+        marker.addEventListener('markerFound', () => {
+          controller.style.display = 'flex';
+          console.log("Marker found - Showing controls");
+        });
+
+        marker.addEventListener('markerLost', () => {
+          controller.style.display = 'none';
+          console.log("Marker lost - Hiding controls");
+        });
+      };
+
+      function moveDeer(action) {
+        if (!deer) return;
+
+        let rotation = deer.getAttribute('rotation');
+        let position = deer.getAttribute('position');
+
+        switch(action) {
+          case 'forward':
+            deer.setAttribute('animation-mixer', 'clip: Walk');
+            position.x -= speed * Math.sin(THREE.Math.degToRad(rotation.y));
+            position.z -= speed * Math.cos(THREE.Math.degToRad(rotation.y));
+            break;
+          case 'backward':
+            deer.setAttribute('animation-mixer', 'clip: Walk');
+            position.x += speed * Math.sin(THREE.Math.degToRad(rotation.y));
+            position.z += speed * Math.cos(THREE.Math.degToRad(rotation.y));
+            break;
+          case 'left':
+            rotation.y += rotationSpeed;
+            deer.setAttribute('animation-mixer', 'clip: WalkL');
+            break;
+          case 'right':
+            rotation.y -= rotationSpeed;
+            deer.setAttribute('animation-mixer', 'clip: WalkR');
+            break;
+          case 'jump':
+            deer.setAttribute('animation-mixer', 'clip: JumpStand');
+            break;
+          case 'idle':
+            deer.setAttribute('animation-mixer', 'clip: Idle');
+            break;
+        }
+
+        deer.setAttribute('rotation', rotation);
+        deer.setAttribute('position', position);
+      }
+    </script>
+  </body>
+</html>
