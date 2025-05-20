@@ -31,6 +31,14 @@
   </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
+
+  <!-- 🎵 Model Sounds -->
+  <audio id="sound-0" src="elepant.mp3" loop></audio>
+  <audio id="sound-1" src="rat.mp3" loop></audio>
+  <audio id="sound-2" src="deer.mp3" loop></audio>
+  <audio id="sound-3" src="bee.mp3" loop></audio>
+
+  <!-- 🔘 Control Buttons -->
   <div class="controller">
     <button onclick="showPrevModel()">Previous</button>
     <button onclick="showNextModel()">Next</button>
@@ -41,6 +49,7 @@
     <button onclick="scaleModel('down')">Scale Down</button>
   </div>
 
+  <!-- 🌐 AR Scene -->
   <a-scene embedded arjs>
     <a-assets>
       <a-asset-item id="model1" src="aliya.glb"></a-asset-item>
@@ -49,7 +58,6 @@
       <a-asset-item id="model4" src="bee.glb"></a-asset-item>
     </a-assets>
 
-    <!-- 🔁 Using Custom Marker -->
     <a-marker preset="kanji">
       <a-entity id="model-0" gltf-model="#model1" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="true"></a-entity>
       <a-entity id="model-1" gltf-model="#model2" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
@@ -60,6 +68,7 @@
     <a-entity camera></a-entity>
   </a-scene>
 
+  <!-- 💡 JS Logic -->
   <script>
     let currentIndex = 0;
     const totalModels = 4;
@@ -77,6 +86,7 @@
       marker.addEventListener('markerLost', () => {
         controller.style.display = 'none';
         stopAnimationLoop();
+        stopAllSounds();
       });
     };
 
@@ -85,6 +95,7 @@
       for (let i = 0; i < totalModels; i++) {
         document.querySelector(`#model-${i}`).setAttribute('visible', i === index);
       }
+      playModelSound(index);
     }
 
     function showNextModel() {
@@ -146,6 +157,26 @@
       if (animationTimer) {
         clearTimeout(animationTimer);
         animationTimer = null;
+      }
+    }
+
+    function stopAllSounds() {
+      for (let i = 0; i < totalModels; i++) {
+        const s = document.getElementById(`sound-${i}`);
+        s.pause();
+        s.currentTime = 0;
+      }
+    }
+
+    function playModelSound(index) {
+      for (let i = 0; i < totalModels; i++) {
+        const s = document.getElementById(`sound-${i}`);
+        if (i === index) {
+          if (s.paused) s.play();
+        } else {
+          s.pause();
+          s.currentTime = 0;
+        }
       }
     }
   </script>
