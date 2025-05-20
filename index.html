@@ -1,122 +1,153 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <style>
-      .controller {
-        position: fixed;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        display: none; /* Smart UI: start hidden */
-        flex-wrap: wrap;
-        justify-content: center;
-        z-index: 20;
-        padding: 0 10px;
+<head>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    .controller {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      z-index: 20;
+      padding: 0 10px;
+    }
+    button {
+      flex: 1 1 40%;
+      min-width: 100px;
+      max-width: 150px;
+      margin: 5px;
+      padding: 15px 20px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+  <div class="controller">
+    <button onclick="showPrevModel()">Previous</button>
+    <button onclick="showNextModel()">Next</button>
+    <button onclick="playAllAnimations()">Play All</button>
+    <button onclick="rotateModel('left')">Rotate Left</button>
+    <button onclick="rotateModel('right')">Rotate Right</button>
+    <button onclick="scaleModel('up')">Scale Up</button>
+    <button onclick="scaleModel('down')">Scale Down</button>
+  </div>
+
+  <a-scene embedded arjs>
+    <a-assets>
+      <a-asset-item id="model1" src="aliya.glb"></a-asset-item>
+      <a-asset-item id="model2" src="rat.glb"></a-asset-item>
+      <a-asset-item id="model3" src="muwa.glb"></a-asset-item>
+      <a-asset-item id="model4" src="bee.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- Use Hiro marker -->
+    <a-marker preset="hiro">
+      <a-entity id="model-0" gltf-model="#model1" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="true"></a-entity>
+      <a-entity id="model-1" gltf-model="#model2" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
+      <a-entity id="model-2" gltf-model="#model3" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
+      <a-entity id="model-3" gltf-model="#model4" animation-mixer position="0 0 0" rotation="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    let currentIndex = 0;
+    const totalModels = 4;
+    let animationTimer = null;
+    let currentClips = [];
+
+    window.onload = () => {
+      const controller = document.querySelector('.controller');
+      const marker = document.querySelector('a-marker');
+
+      marker.addEventListener('markerFound', () => {
+        controller.style.display = 'flex';
+      });
+
+      marker.addEventListener('markerLost', () => {
+        controller.style.display = 'none';
+        stopAnimationLoop();
+      });
+    };
+
+    function showModel(index) {
+      stopAnimationLoop();
+      for (let i = 0; i < totalModels; i++) {
+        document.querySelector(`#model-${i}`).setAttribute('visible', i === index);
       }
-      button {
-        flex: 1 1 40%;
-        min-width: 100px;
-        max-width: 150px;
-        margin: 5px;
-        padding: 15px 20px;
-        font-size: 18px;
-        border-radius: 10px;
-        border: none;
-        background-color: #007bff;
-        color: white;
+    }
+
+    function showNextModel() {
+      currentIndex = (currentIndex + 1) % totalModels;
+      showModel(currentIndex);
+    }
+
+    function showPrevModel() {
+      currentIndex = (currentIndex - 1 + totalModels) % totalModels;
+      showModel(currentIndex);
+    }
+
+    function getVisibleModel() {
+      return document.querySelector(`#model-${currentIndex}`);
+    }
+
+    function rotateModel(dir) {
+      const model = getVisibleModel();
+      let rotation = model.getAttribute('rotation');
+      rotation.y += (dir === 'left' ? 10 : -10);
+      model.setAttribute('rotation', rotation);
+    }
+
+    function scaleModel(dir) {
+      const model = getVisibleModel();
+      let scale = model.getAttribute('scale');
+      let factor = dir === 'up' ? 1.1 : 0.9;
+      scale.x *= factor;
+      scale.y *= factor;
+      scale.z *= factor;
+      model.setAttribute('scale', scale);
+    }
+
+    function playAllAnimations() {
+      stopAnimationLoop();
+      const model = getVisibleModel();
+      const gltf = model.getObject3D('mesh');
+
+      if (!gltf || !gltf.animations || gltf.animations.length === 0) {
+        console.warn("Animations not loaded yet.");
+        setTimeout(playAllAnimations, 500);
+        return;
       }
-    </style>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
-    <div class="controller">
-      <button onclick="moveDeer('forward')">Forward</button>
-      <button onclick="moveDeer('backward')">Backward</button>
-      <button onclick="moveDeer('left')">Left</button>
-      <button onclick="moveDeer('right')">Right</button>
-      <button onclick="moveDeer('idle')">Idle</button>
-      <button onclick="moveDeer('jump')">Jump</button>
-    </div>
 
-    <a-scene embedded arjs>
-      <a-assets>
-        <a-asset-item id="fox" src="muwa.glb"></a-asset-item>
-      </a-assets>
+      currentClips = gltf.animations.map(a => a.name);
+      let clipIndex = 0;
 
-      <a-marker type="pattern" url="pattern-DEER_AR.patt">
-        <a-entity 
-          id="animatedDeer"
-          gltf-model="#fox"
-          animation-mixer="clip: Idle"
-          position="0 0 0"
-          rotation="0 0 0"
-          scale="0.8 0.8 0.8">
-        </a-entity>
-      </a-marker>
-
-      <a-entity camera></a-entity>
-    </a-scene>
-
-    <script>
-      let deer = null;
-      let speed = 0.05;
-      let rotationSpeed = 10;
-
-      window.onload = () => {
-        deer = document.querySelector('#animatedDeer');
-        const controller = document.querySelector('.controller');
-
-        // Show controls only after marker is found
-        const marker = document.querySelector('a-marker');
-        marker.addEventListener('markerFound', () => {
-          controller.style.display = 'flex';
-          console.log("Marker found - Showing controls");
-        });
-
-        marker.addEventListener('markerLost', () => {
-          controller.style.display = 'none';
-          console.log("Marker lost - Hiding controls");
-        });
+      const playNext = () => {
+        const clip = currentClips[clipIndex];
+        model.setAttribute('animation-mixer', `clip: ${clip}`);
+        clipIndex = (clipIndex + 1) % currentClips.length;
+        animationTimer = setTimeout(playNext, 2000);
       };
 
-      function moveDeer(action) {
-        if (!deer) return;
+      playNext();
+    }
 
-        let rotation = deer.getAttribute('rotation');
-        let position = deer.getAttribute('position');
-
-        switch(action) {
-          case 'forward':
-            deer.setAttribute('animation-mixer', 'clip: Walk');
-            position.x -= speed * Math.sin(THREE.Math.degToRad(rotation.y));
-            position.z -= speed * Math.cos(THREE.Math.degToRad(rotation.y));
-            break;
-          case 'backward':
-            deer.setAttribute('animation-mixer', 'clip: Walk');
-            position.x += speed * Math.sin(THREE.Math.degToRad(rotation.y));
-            position.z += speed * Math.cos(THREE.Math.degToRad(rotation.y));
-            break;
-          case 'left':
-            rotation.y += rotationSpeed;
-            deer.setAttribute('animation-mixer', 'clip: WalkL');
-            break;
-          case 'right':
-            rotation.y -= rotationSpeed;
-            deer.setAttribute('animation-mixer', 'clip: WalkR');
-            break;
-          case 'jump':
-            deer.setAttribute('animation-mixer', 'clip: JumpStand');
-            break;
-          case 'idle':
-            deer.setAttribute('animation-mixer', 'clip: Idle');
-            break;
-        }
-
-        deer.setAttribute('rotation', rotation);
-        deer.setAttribute('position', position);
+    function stopAnimationLoop() {
+      if (animationTimer) {
+        clearTimeout(animationTimer);
+        animationTimer = null;
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
 </html>
